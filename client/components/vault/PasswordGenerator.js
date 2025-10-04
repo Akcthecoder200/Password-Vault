@@ -12,7 +12,10 @@ export default function PasswordGenerator() {
     score: 0,
     feedback: "",
   });
-  const [isCopied, copyToClipboard] = useCopyToClipboard();
+  // Use our custom hook with 15 seconds clipboard clear timeout
+  const [isCopied, copyToClipboard] = useCopyToClipboard(15000);
+  // Track clipboard status for UI
+  const [clipboardStatus, setClipboardStatus] = useState(null);
 
   const [options, setOptions] = useState({
     length: 16,
@@ -23,10 +26,17 @@ export default function PasswordGenerator() {
     excludeSimilarChars: false,
   });
 
-  // Generate a password initially
+  // Generate a password initially and when options change
   useEffect(() => {
     handleGeneratePassword();
-  }, []);
+  }, [
+    options.length,
+    options.includeSymbols,
+    options.includeNumbers,
+    options.includeLowercase,
+    options.includeUppercase,
+    options.excludeSimilarChars,
+  ]);
 
   // Check password strength when password changes
   useEffect(() => {
@@ -37,6 +47,31 @@ export default function PasswordGenerator() {
 
   const handleOptionChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    // For checkboxes, make sure at least one option remains selected
+    if (type === "checkbox" && !checked) {
+      // Count how many options are currently enabled
+      const enabledOptions = Object.entries(options).filter(
+        ([key, value]) =>
+          (key === "includeLowercase" ||
+            key === "includeUppercase" ||
+            key === "includeNumbers" ||
+            key === "includeSymbols") &&
+          value
+      ).length;
+
+      // If this is the last enabled option, don't allow unchecking
+      if (
+        enabledOptions <= 1 &&
+        (name === "includeLowercase" ||
+          name === "includeUppercase" ||
+          name === "includeNumbers" ||
+          name === "includeSymbols")
+      ) {
+        return; // Don't update state
+      }
+    }
+
     setOptions((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : Number(value),
@@ -62,6 +97,23 @@ export default function PasswordGenerator() {
   const handleCopyPassword = () => {
     if (password) {
       copyToClipboard(password);
+
+      // Show clipboard status
+      setClipboardStatus("Copied to clipboard!");
+
+      // Show a countdown message
+      const countdown = setTimeout(() => {
+        setClipboardStatus("Clipboard will be cleared in 15s");
+
+        // Clear the clipboard status message after 15 seconds
+        const clearMessage = setTimeout(() => {
+          setClipboardStatus(null);
+        }, 15000);
+
+        return () => clearTimeout(clearMessage);
+      }, 2000);
+
+      return () => clearTimeout(countdown);
     }
   };
 
@@ -129,9 +181,14 @@ export default function PasswordGenerator() {
               style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
             />
           </div>
-          <p className="text-xs mt-1 text-gray-600">
-            Strength: {passwordStrength.feedback}
-          </p>
+          <div className="flex justify-between mt-1">
+            <p className="text-xs text-gray-600">
+              Strength: {passwordStrength.feedback}
+            </p>
+            {clipboardStatus && (
+              <p className="text-xs text-green-600">{clipboardStatus}</p>
+            )}
+          </div>
         </div>
       </div>
 

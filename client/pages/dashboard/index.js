@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { withAuth } from "../../utils/auth";
 import { vaultAPI } from "../../utils/api";
+import { useEncryption } from "../../utils/encryptionContext";
 import Button from "../../components/Button";
 import VaultItem from "../../components/vault/VaultItem";
 import VaultForm from "../../components/vault/VaultForm";
@@ -15,6 +16,7 @@ function Dashboard() {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const { encrypt, decrypt, encryptionReady } = useEncryption();
 
   // Load vault items on initial render
   useEffect(() => {
@@ -28,10 +30,57 @@ function Dashboard() {
 
   // Fetch all vault items
   const fetchVaultItems = async () => {
+    if (!encryptionReady) {
+      setError("Encryption is not initialized. Please reload the page.");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await vaultAPI.getAll();
-      setVaultItems(response.data);
+
+      // Decrypt all vault items
+      const decryptedItems = await Promise.all(
+        response.data.map(async (encryptedItem) => {
+          try {
+            // Skip if the item doesn't have ciphertext (for backward compatibility)
+            if (!encryptedItem.ciphertext) {
+              return encryptedItem;
+            }
+
+            // Decrypt the vault item
+            const decryptedData = await decrypt({
+              ciphertext: encryptedItem.ciphertext,
+              nonce: encryptedItem.nonce,
+            });
+
+            // Return item with decrypted data and original ID
+            return {
+              _id: encryptedItem._id,
+              ...decryptedData,
+              createdAt: encryptedItem.createdAt,
+              updatedAt: encryptedItem.updatedAt,
+            };
+          } catch (error) {
+            console.error("Failed to decrypt item:", error);
+            // Return a placeholder for failed decryption
+            return {
+              _id: encryptedItem._id,
+              siteName: "Decryption Failed",
+              username: "Unknown",
+              password: "********",
+              siteUrl: "",
+              notes:
+                "This item could not be decrypted. It may be corrupted or was encrypted with a different key.",
+              createdAt: encryptedItem.createdAt,
+              updatedAt: encryptedItem.updatedAt,
+            };
+          }
+        })
+      );
+
+      setVaultItems(decryptedItems);
       setError("");
     } catch (err) {
       console.error("Failed to fetch vault items:", err);
@@ -62,8 +111,23 @@ function Dashboard() {
 
   // Add new vault item
   const handleAddItem = async (formData) => {
+    if (!encryptionReady) {
+      alert("Encryption is not initialized. Please reload the page.");
+      return;
+    }
+
     try {
-      await vaultAPI.create(formData);
+      // Encrypt vault item data
+      const encryptedData = await encrypt({
+        siteName: formData.siteName,
+        username: formData.username,
+        password: formData.password,
+        siteUrl: formData.siteUrl || "",
+        notes: formData.notes || "",
+      });
+
+      // Send encrypted data to server
+      await vaultAPI.create(encryptedData);
       setIsAddingNew(false);
       fetchVaultItems();
     } catch (err) {
@@ -79,8 +143,23 @@ function Dashboard() {
 
   // Update vault item
   const handleUpdateItem = async (formData) => {
+    if (!encryptionReady) {
+      alert("Encryption is not initialized. Please reload the page.");
+      return;
+    }
+
     try {
-      await vaultAPI.update(editingItem._id, formData);
+      // Encrypt updated vault item data
+      const encryptedData = await encrypt({
+        siteName: formData.siteName,
+        username: formData.username,
+        password: formData.password,
+        siteUrl: formData.siteUrl || "",
+        notes: formData.notes || "",
+      });
+
+      // Send encrypted data to server
+      await vaultAPI.update(editingItem._id, encryptedData);
       setEditingItem(null);
       fetchVaultItems();
     } catch (err) {

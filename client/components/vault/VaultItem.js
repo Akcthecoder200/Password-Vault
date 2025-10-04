@@ -4,7 +4,7 @@ import Button from "../Button";
 
 export default function VaultItem({ item, onEdit, onDelete }) {
   const [showPassword, setShowPassword] = useState(false);
-  const [isCopied, copyToClipboard] = useCopyToClipboard();
+  const [isCopied, copyToClipboard] = useCopyToClipboard(15000); // 15 seconds clipboard auto-clear
 
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
@@ -12,6 +12,7 @@ export default function VaultItem({ item, onEdit, onDelete }) {
 
   const handleCopyPassword = () => {
     copyToClipboard(item.password);
+    // Display a tooltip or notification here if desired
   };
 
   return (

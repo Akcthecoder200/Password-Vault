@@ -3,6 +3,7 @@ import Button from "../components/Button";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useAuth } from "../utils/auth";
+import { useEncryption } from "../utils/encryptionContext";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { login } = useAuth();
+  const { initializeEncryption } = useEncryption();
   const router = useRouter();
 
   const handleChange = (e) => {
@@ -29,6 +31,8 @@ export default function Login() {
       const result = await login(formData);
 
       if (result.success) {
+        // Initialize encryption with the user's password and salt
+        await initializeEncryption(formData.password, result.encSalt);
         router.push("/dashboard");
       } else {
         setError(

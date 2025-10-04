@@ -53,6 +53,7 @@ export default function VaultForm({
   };
 
   const handleGeneratePassword = () => {
+    // Generate password using Web Crypto API
     const password = generatePassword(passwordOptions);
     setFormData((prev) => ({ ...prev, password }));
   };

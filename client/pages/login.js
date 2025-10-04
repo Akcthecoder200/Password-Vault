@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Button from "../components/Button";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { useAuth } from "../utils/auth";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -8,27 +10,32 @@ export default function Login() {
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { login } = useAuth();
+  const router = useRouter();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
     try {
-      // TODO: Connect to backend login API
-      console.log("Login form submitted:", formData);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Redirect to dashboard on success
-      // router.push('/dashboard');
+      const result = await login(formData);
+      
+      if (result.success) {
+        router.push('/dashboard');
+      } else {
+        setError(result.message || "Login failed. Please check your credentials.");
+      }
     } catch (error) {
       console.error("Login failed:", error);
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -43,6 +50,12 @@ export default function Login() {
 
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
         <h2 className="text-2xl font-semibold mb-6 text-gray-800">Login</h2>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

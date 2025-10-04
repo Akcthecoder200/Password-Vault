@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Button from "../components/Button";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { useAuth } from "../utils/auth";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -11,6 +13,8 @@ export default function Register() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const { register } = useAuth();
+  const router = useRouter();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,14 +36,20 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // TODO: Connect to backend register API
-      console.log("Register form submitted:", formData);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Redirect to login on success
-      // router.push('/login');
+      // Register with backend API
+      const { confirmPassword, ...userData } = formData;
+      // Only send email and password to backend - name will be handled separately
+      const registerData = { 
+        email: userData.email, 
+        password: userData.password 
+      };
+      const result = await register(registerData);
+      
+      if (result.success) {
+        router.push('/login?registered=true');
+      } else {
+        setError(result.message || "Registration failed. Please try again.");
+      }
     } catch (error) {
       console.error("Registration failed:", error);
       setError("Registration failed. Please try again.");

@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import { User } from "../models/index.js";
 import { generateToken, generateRandomString } from "../utils/crypto.js";
+import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -71,6 +72,33 @@ router.post("/login", async (req, res) => {
     }
   } catch (error) {
     console.error("Login error:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/**
+ * @route   GET /api/auth/verify
+ * @desc    Verify user token and return user data
+ * @access  Private
+ */
+router.get("/verify", protect, async (req, res) => {
+  try {
+    // req.user is set by the protect middleware
+    const user = await User.findById(req.user._id).select("-passwordHash");
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    res.json({
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name || user.email.split('@')[0], // Use email prefix as name if name is not set
+      }
+    });
+  } catch (error) {
+    console.error("Token verification error:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 });

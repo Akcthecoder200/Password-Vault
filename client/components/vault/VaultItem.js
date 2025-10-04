@@ -1,19 +1,15 @@
-import { useState } from 'react';
-import { useCopyToClipboard } from '../../utils/passwordUtils';
-import Button from '../Button';
+import { useState } from "react";
+import { useCopyToClipboard } from "../../utils/passwordUtils";
+import Button from "../Button";
 
-export default function VaultItem({
-  item,
-  onEdit,
-  onDelete,
-}) {
+export default function VaultItem({ item, onEdit, onDelete }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isCopied, copyToClipboard] = useCopyToClipboard();
-  
+
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
   };
-  
+
   const handleCopyPassword = () => {
     copyToClipboard(item.password);
   };
@@ -27,7 +23,9 @@ export default function VaultItem({
             {item.siteName.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">{item.siteName}</h3>
+            <h3 className="text-lg font-semibold text-gray-800">
+              {item.siteName}
+            </h3>
             <p className="text-sm text-gray-500">{item.username}</p>
           </div>
         </div>
@@ -37,14 +35,14 @@ export default function VaultItem({
           </span>
         </div>
       </div>
-      
+
       <div className="mt-4">
         <div className="flex items-center justify-between mt-2">
           <label className="text-sm font-medium text-gray-700">Password:</label>
           <div className="flex space-x-2">
             <div className="relative flex-grow">
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 value={item.password}
                 readOnly
                 className="w-full py-1 px-2 text-sm border border-gray-300 rounded-md bg-gray-50"
@@ -53,7 +51,7 @@ export default function VaultItem({
             <button
               onClick={toggleShowPassword}
               className="p-1 text-gray-500 hover:text-gray-800"
-              title={showPassword ? 'Hide password' : 'Show password'}
+              title={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
                 <span className="text-sm">Hide</span>
@@ -74,7 +72,7 @@ export default function VaultItem({
             </button>
           </div>
         </div>
-        
+
         {item.notes && (
           <div className="mt-2">
             <p className="text-sm text-gray-500">
@@ -83,7 +81,7 @@ export default function VaultItem({
           </div>
         )}
       </div>
-      
+
       <div className="mt-4 flex justify-end space-x-2">
         <Button
           variant="outline"

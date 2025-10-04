@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
-import { withAuth } from '../../utils/auth';
-import { vaultAPI } from '../../utils/api';
-import Button from '../../components/Button';
-import VaultItem from '../../components/vault/VaultItem';
-import VaultForm from '../../components/vault/VaultForm';
-import SearchBar from '../../components/vault/SearchBar';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import { withAuth } from "../../utils/auth";
+import { vaultAPI } from "../../utils/api";
+import Button from "../../components/Button";
+import VaultItem from "../../components/vault/VaultItem";
+import VaultForm from "../../components/vault/VaultForm";
+import SearchBar from "../../components/vault/SearchBar";
+import Link from "next/link";
 
 function Dashboard() {
   const [vaultItems, setVaultItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
@@ -32,10 +32,10 @@ function Dashboard() {
       setLoading(true);
       const response = await vaultAPI.getAll();
       setVaultItems(response.data);
-      setError('');
+      setError("");
     } catch (err) {
-      console.error('Failed to fetch vault items:', err);
-      setError('Failed to load your passwords. Please try again.');
+      console.error("Failed to fetch vault items:", err);
+      setError("Failed to load your passwords. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -67,8 +67,8 @@ function Dashboard() {
       setIsAddingNew(false);
       fetchVaultItems();
     } catch (err) {
-      console.error('Failed to add vault item:', err);
-      alert('Failed to add new password. Please try again.');
+      console.error("Failed to add vault item:", err);
+      alert("Failed to add new password. Please try again.");
     }
   };
 
@@ -84,8 +84,8 @@ function Dashboard() {
       setEditingItem(null);
       fetchVaultItems();
     } catch (err) {
-      console.error('Failed to update vault item:', err);
-      alert('Failed to update password. Please try again.');
+      console.error("Failed to update vault item:", err);
+      alert("Failed to update password. Please try again.");
     }
   };
 
@@ -96,8 +96,8 @@ function Dashboard() {
       setShowDeleteConfirm(null);
       fetchVaultItems();
     } catch (err) {
-      console.error('Failed to delete vault item:', err);
-      alert('Failed to delete password. Please try again.');
+      console.error("Failed to delete vault item:", err);
+      alert("Failed to delete password. Please try again.");
     }
   };
 
@@ -111,7 +111,9 @@ function Dashboard() {
     <div className="max-w-6xl mx-auto">
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">My Password Vault</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            My Password Vault
+          </h1>
           <p className="text-gray-600">
             Securely store and manage your passwords
           </p>

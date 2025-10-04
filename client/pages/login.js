@@ -27,11 +27,13 @@ export default function Login() {
 
     try {
       const result = await login(formData);
-      
+
       if (result.success) {
-        router.push('/dashboard');
+        router.push("/dashboard");
       } else {
-        setError(result.message || "Login failed. Please check your credentials.");
+        setError(
+          result.message || "Login failed. Please check your credentials."
+        );
       }
     } catch (error) {
       console.error("Login failed:", error);
@@ -50,7 +52,7 @@ export default function Login() {
 
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
         <h2 className="text-2xl font-semibold mb-6 text-gray-800">Login</h2>
-        
+
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
             {error}

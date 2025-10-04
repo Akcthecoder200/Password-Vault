@@ -39,14 +39,14 @@ export default function Register() {
       // Register with backend API
       const { confirmPassword, ...userData } = formData;
       // Only send email and password to backend - name will be handled separately
-      const registerData = { 
-        email: userData.email, 
-        password: userData.password 
+      const registerData = {
+        email: userData.email,
+        password: userData.password,
       };
       const result = await register(registerData);
-      
+
       if (result.success) {
-        router.push('/login?registered=true');
+        router.push("/login?registered=true");
       } else {
         setError(result.message || "Registration failed. Please try again.");
       }

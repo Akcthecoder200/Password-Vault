@@ -85,17 +85,17 @@ router.get("/verify", protect, async (req, res) => {
   try {
     // req.user is set by the protect middleware
     const user = await User.findById(req.user._id).select("-passwordHash");
-    
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    
+
     res.json({
       user: {
         _id: user._id,
         email: user.email,
-        name: user.name || user.email.split('@')[0], // Use email prefix as name if name is not set
-      }
+        name: user.name || user.email.split("@")[0], // Use email prefix as name if name is not set
+      },
     });
   } catch (error) {
     console.error("Token verification error:", error.message);

@@ -1,5 +1,5 @@
-import { withAuth } from '../../utils/auth';
-import PasswordGenerator from '../../components/vault/PasswordGenerator';
+import { withAuth } from "../../utils/auth";
+import PasswordGenerator from "../../components/vault/PasswordGenerator";
 
 function GeneratorPage() {
   return (
@@ -10,7 +10,7 @@ function GeneratorPage() {
           Create strong and secure passwords for your accounts
         </p>
       </div>
-      
+
       <PasswordGenerator />
     </div>
   );

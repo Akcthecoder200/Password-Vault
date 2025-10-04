@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { withAuth } from "../../utils/auth";
 import { vaultAPI } from "../../utils/api";
 import { useEncryption } from "../../utils/encryptionContext";
+import { searchVaultItems, sortVaultItems } from "../../utils/searchUtils";
 import Button from "../../components/Button";
 import VaultItem from "../../components/vault/VaultItem";
 import VaultForm from "../../components/vault/VaultForm";
 import SearchBar from "../../components/vault/SearchBar";
+import GroupedVaultItems from "../../components/vault/GroupedVaultItems";
+import { useGroupView } from "../../components/vault/GroupView";
 import Link from "next/link";
 
 function Dashboard() {
@@ -18,21 +21,53 @@ function Dashboard() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const { encrypt, decrypt, encryptionReady } = useEncryption();
 
-  // Load vault items on initial render
+  // Load vault items on initial render and whenever encryption becomes ready
   useEffect(() => {
-    fetchVaultItems();
-  }, []);
+    if (encryptionReady) {
+      fetchVaultItems();
+    } else {
+      setLoading(true);
+    }
+  }, [encryptionReady]);
 
-  // Update filtered items when vault items change
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchFilters, setSearchFilters] = useState({});
+  const [sortConfig, setSortConfig] = useState({
+    sortBy: "siteName",
+    sortOrder: "asc",
+  });
+
+  // Setup group view functionality
+  const { isGroupView, groupBy, groupedItems, toggleGroupView, changeGroupBy } =
+    useGroupView(filteredItems);
+
+  // Update filtered items when vault items change or search/filter/sort changes
   useEffect(() => {
-    setFilteredItems(vaultItems);
-  }, [vaultItems]);
+    // Apply search & filters
+    let results = searchVaultItems(vaultItems, searchQuery, searchFilters);
+
+    // Apply sorting
+    results = sortVaultItems(results, sortConfig.sortBy, sortConfig.sortOrder);
+
+    setFilteredItems(results);
+  }, [vaultItems, searchQuery, searchFilters, sortConfig]);
 
   // Fetch all vault items
   const fetchVaultItems = async () => {
     if (!encryptionReady) {
-      setError("Encryption is not initialized. Please reload the page.");
+      setError(
+        "Encryption is initializing. Please wait or try refreshing the page if this persists."
+      );
       setLoading(false);
+
+      // Retry after a delay to see if encryption becomes ready
+      setTimeout(() => {
+        if (encryptionReady) {
+          setError("");
+          fetchVaultItems();
+        }
+      }, 3000); // Wait 3 seconds and retry
+
       return;
     }
 
@@ -90,29 +125,23 @@ function Dashboard() {
     }
   };
 
-  // Handle search
-  const handleSearch = (query) => {
-    if (!query.trim()) {
-      setFilteredItems(vaultItems);
-      return;
-    }
+  // Handle search and filtering
+  const handleSearch = (query, filters = {}) => {
+    setSearchQuery(query);
+    setSearchFilters(filters);
+  };
 
-    const lowercaseQuery = query.toLowerCase();
-    const filtered = vaultItems.filter(
-      (item) =>
-        item.siteName.toLowerCase().includes(lowercaseQuery) ||
-        item.username.toLowerCase().includes(lowercaseQuery) ||
-        (item.siteUrl && item.siteUrl.toLowerCase().includes(lowercaseQuery)) ||
-        (item.notes && item.notes.toLowerCase().includes(lowercaseQuery))
-    );
-
-    setFilteredItems(filtered);
+  // Handle sorting
+  const handleSort = (sortConfig) => {
+    setSortConfig(sortConfig);
   };
 
   // Add new vault item
   const handleAddItem = async (formData) => {
     if (!encryptionReady) {
-      alert("Encryption is not initialized. Please reload the page.");
+      alert(
+        "Encryption is not initialized. Please wait a moment and try again, or try refreshing the page."
+      );
       return;
     }
 
@@ -144,7 +173,9 @@ function Dashboard() {
   // Update vault item
   const handleUpdateItem = async (formData) => {
     if (!encryptionReady) {
-      alert("Encryption is not initialized. Please reload the page.");
+      alert(
+        "Encryption is not initialized. Please wait a moment and try again, or try refreshing the page."
+      );
       return;
     }
 
@@ -215,7 +246,47 @@ function Dashboard() {
       )}
 
       <div className="mb-6">
-        <SearchBar onSearch={handleSearch} />
+        <SearchBar
+          onSearch={handleSearch}
+          onFilter={handleSearch}
+          onSort={handleSort}
+        />
+      </div>
+
+      <div className="mb-4 flex flex-wrap justify-between items-center gap-3">
+        <p className="text-sm text-gray-500">
+          {filteredItems.length}{" "}
+          {filteredItems.length === 1 ? "password" : "passwords"} found
+          {filteredItems.length !== vaultItems.length &&
+            ` (filtered from ${vaultItems.length} total)`}
+        </p>
+
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={toggleGroupView}
+            className={`px-3 py-1 text-sm rounded border ${
+              isGroupView
+                ? "bg-blue-50 text-blue-700 border-blue-200"
+                : "bg-gray-50 text-gray-700 border-gray-300"
+            }`}
+          >
+            {isGroupView ? "List View" : "Group View"}
+          </button>
+
+          {isGroupView && (
+            <select
+              value={groupBy}
+              onChange={(e) => changeGroupBy(e.target.value)}
+              className="text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="siteName">Group by: Site Name</option>
+              <option value="domain">Group by: Domain</option>
+              <option value="strength">Group by: Strength</option>
+              <option value="createdAt">Group by: Date Added</option>
+              <option value="updatedAt">Group by: Last Updated</option>
+            </select>
+          )}
+        </div>
       </div>
 
       {isAddingNew && (
@@ -274,6 +345,12 @@ function Dashboard() {
             </div>
           )}
         </div>
+      ) : isGroupView ? (
+        <GroupedVaultItems
+          groupedItems={groupedItems}
+          onEdit={handleEdit}
+          onDelete={(id) => setShowDeleteConfirm(id)}
+        />
       ) : (
         <div className="space-y-4">
           {filteredItems.map((item) => (

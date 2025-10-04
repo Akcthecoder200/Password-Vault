@@ -28,11 +28,48 @@ export default function Login() {
     setError("");
 
     try {
+      // First, check if sodium is available
+      try {
+        const sodium = await import("libsodium-wrappers");
+        await sodium.default.ready;
+        console.log("Sodium initialized successfully");
+      } catch (sodiumError) {
+        console.error("Failed to initialize sodium:", sodiumError);
+        setError(
+          "Encryption library failed to load. Please refresh and try again."
+        );
+        setIsLoading(false);
+        return;
+      }
+
       const result = await login(formData);
 
       if (result.success) {
+        console.log(
+          "Login successful, initializing encryption with salt:",
+          result.encSalt ? "present" : "missing"
+        );
+
+        if (!result.encSalt) {
+          setError(
+            "Login successful but encryption salt is missing. Please contact support."
+          );
+          setIsLoading(false);
+          return;
+        }
+
         // Initialize encryption with the user's password and salt
-        await initializeEncryption(formData.password, result.encSalt);
+        const encryptionSuccess = await initializeEncryption(
+          formData.password,
+          result.encSalt
+        );
+
+        if (!encryptionSuccess) {
+          setError("Failed to initialize encryption. Please try again.");
+          setIsLoading(false);
+          return;
+        }
+
         router.push("/dashboard");
       } else {
         setError(

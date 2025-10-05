@@ -138,14 +138,27 @@ function Dashboard() {
 
   // Add new vault item
   const handleAddItem = async (formData) => {
-    if (!encryptionReady) {
-      alert(
-        "Encryption is not initialized. Please wait a moment and try again, or try refreshing the page."
-      );
-      return;
-    }
-
     try {
+      if (!encryptionReady) {
+        // Provide more helpful information
+        const message =
+          "Encryption is not initialized. Please wait a moment and try again, or try refreshing the page.";
+        setError(message);
+        alert(message);
+
+        // Automatically reload page to attempt recovery
+        setTimeout(() => {
+          if (!encryptionReady) {
+            window.location.reload();
+          }
+        }, 2000);
+
+        return;
+      }
+
+      // Set temporary loading state for better feedback
+      setLoading(true);
+
       // Encrypt vault item data
       const encryptedData = await encrypt({
         siteName: formData.siteName,
@@ -158,10 +171,24 @@ function Dashboard() {
       // Send encrypted data to server
       await vaultAPI.create(encryptedData);
       setIsAddingNew(false);
+      setError(""); // Clear any previous errors
       fetchVaultItems();
     } catch (err) {
       console.error("Failed to add vault item:", err);
-      alert("Failed to add new password. Please try again.");
+
+      if (err.message === "Encryption not initialized") {
+        // Special handling for encryption errors
+        setError(
+          "Encryption is not initialized. The page will reload automatically to fix this issue."
+        );
+
+        // Auto-reload after a brief delay
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        alert("Failed to add new password. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -172,14 +199,27 @@ function Dashboard() {
 
   // Update vault item
   const handleUpdateItem = async (formData) => {
-    if (!encryptionReady) {
-      alert(
-        "Encryption is not initialized. Please wait a moment and try again, or try refreshing the page."
-      );
-      return;
-    }
-
     try {
+      if (!encryptionReady) {
+        // Provide more helpful information
+        const message =
+          "Encryption is not initialized. Please wait a moment and try again, or try refreshing the page.";
+        setError(message);
+        alert(message);
+
+        // Automatically reload page to attempt recovery
+        setTimeout(() => {
+          if (!encryptionReady) {
+            window.location.reload();
+          }
+        }, 2000);
+
+        return;
+      }
+
+      // Set temporary loading state for better feedback
+      setLoading(true);
+
       // Encrypt updated vault item data
       const encryptedData = await encrypt({
         siteName: formData.siteName,
@@ -192,10 +232,24 @@ function Dashboard() {
       // Send encrypted data to server
       await vaultAPI.update(editingItem._id, encryptedData);
       setEditingItem(null);
+      setError(""); // Clear any previous errors
       fetchVaultItems();
     } catch (err) {
       console.error("Failed to update vault item:", err);
-      alert("Failed to update password. Please try again.");
+
+      if (err.message === "Encryption not initialized") {
+        // Special handling for encryption errors
+        setError(
+          "Encryption is not initialized. The page will reload automatically to fix this issue."
+        );
+
+        // Auto-reload after a brief delay
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        alert("Failed to update password. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 

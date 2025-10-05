@@ -5,11 +5,11 @@ export const useGroupView = (items, defaultGroupBy = null) => {
   const [isGroupView, setIsGroupView] = useState(Boolean(defaultGroupBy));
   const [groupBy, setGroupBy] = useState(defaultGroupBy || "none");
 
-  // Group items if grouping is enabled
+  // Group items if grouping is enabled and items exist
   const groupedItems =
-    isGroupView && groupBy !== "none"
+    isGroupView && groupBy !== "none" && items && items.length > 0
       ? groupItemsByField(items, groupBy)
-      : null;
+      : {};
 
   // Toggle group view
   const toggleGroupView = () => {
@@ -35,7 +35,11 @@ export const useGroupView = (items, defaultGroupBy = null) => {
 
 // Group items by a specific field
 const groupItemsByField = (items, field) => {
-  if (!items || items.length === 0) return {};
+  // Handle null, undefined, or empty items
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    console.log("No items to group, returning empty object");
+    return {};
+  }
 
   // Special grouping handlers
   if (field === "strength") {

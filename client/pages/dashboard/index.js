@@ -37,10 +37,6 @@ function Dashboard() {
     sortOrder: "asc",
   });
 
-  // Setup group view functionality
-  const { isGroupView, groupBy, groupedItems, toggleGroupView, changeGroupBy } =
-    useGroupView(filteredItems);
-
   // Update filtered items when vault items change or search/filter/sort changes
   useEffect(() => {
     // Apply search & filters
@@ -51,6 +47,10 @@ function Dashboard() {
 
     setFilteredItems(results);
   }, [vaultItems, searchQuery, searchFilters, sortConfig]);
+
+  // Setup group view functionality - make sure to use the updated filteredItems
+  const { isGroupView, groupBy, groupedItems, toggleGroupView, changeGroupBy } =
+    useGroupView(filteredItems);
 
   // Fetch all vault items
   const fetchVaultItems = async () => {
@@ -401,7 +401,7 @@ function Dashboard() {
         </div>
       ) : isGroupView ? (
         <GroupedVaultItems
-          groupedItems={groupedItems}
+          groupedItems={groupedItems || {}} // Provide empty object as fallback
           onEdit={handleEdit}
           onDelete={(id) => setShowDeleteConfirm(id)}
         />

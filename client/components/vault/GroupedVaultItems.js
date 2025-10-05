@@ -11,8 +11,17 @@ export default function GroupedVaultItems({ groupedItems, onEdit, onDelete }) {
     }));
   };
 
-  // Sort groups by name
-  const sortedGroups = Object.keys(groupedItems).sort();
+  // Make sure groupedItems is not null or undefined before using Object.keys
+  const sortedGroups = groupedItems ? Object.keys(groupedItems).sort() : [];
+
+  // If there are no groups, show a message
+  if (sortedGroups.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 text-center">
+        <p className="text-gray-500">No items to display in group view.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

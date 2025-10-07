@@ -7,9 +7,63 @@ import { protect } from "../middleware/auth.js";
 const router = express.Router();
 
 /**
- * @route   POST /api/auth/register
- * @desc    Register a new user
- * @access  Public
+ * @openapi
+ * /api/auth/register:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Register a new user
+ *     description: Creates a new user account and returns user data with authentication token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: SecurePassword123!
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: 60d21b4667d0d8992e610c85
+ *                 email:
+ *                   type: string
+ *                   example: user@example.com
+ *                 encSalt:
+ *                   type: string
+ *                   example: a1b2c3d4e5f6g7h8
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       400:
+ *         description: User already exists or invalid data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post("/register", async (req, res) => {
   try {
@@ -48,9 +102,63 @@ router.post("/register", async (req, res) => {
 });
 
 /**
- * @route   POST /api/auth/login
- * @desc    Authenticate user & get token + encryption salt
- * @access  Public
+ * @openapi
+ * /api/auth/login:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Login a user
+ *     description: Authenticates a user and returns user data with authentication token and encryption salt
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: SecurePassword123!
+ *     responses:
+ *       200:
+ *         description: User authenticated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: 60d21b4667d0d8992e610c85
+ *                 email:
+ *                   type: string
+ *                   example: user@example.com
+ *                 encSalt:
+ *                   type: string
+ *                   example: a1b2c3d4e5f6g7h8
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post("/login", async (req, res) => {
   try {
@@ -77,9 +185,53 @@ router.post("/login", async (req, res) => {
 });
 
 /**
- * @route   GET /api/auth/verify
- * @desc    Verify user token and return user data
- * @access  Private
+ * @openapi
+ * /api/auth/verify:
+ *   get:
+ *     tags:
+ *       - Authentication
+ *     summary: Verify user token
+ *     description: Verifies the JWT token and returns user data
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Token verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: 60d21b4667d0d8992e610c85
+ *                     email:
+ *                       type: string
+ *                       example: user@example.com
+ *                     name:
+ *                       type: string
+ *                       example: user
+ *       401:
+ *         description: Not authorized, no token or invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get("/verify", protect, async (req, res) => {
   try {

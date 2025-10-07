@@ -77,9 +77,53 @@ router.post("/login", async (req, res) => {
 });
 
 /**
- * @route   GET /api/users/profile
- * @desc    Get user profile
- * @access  Private
+ * @openapi
+ * /api/users/profile:
+ *   get:
+ *     tags:
+ *       - Users
+ *     summary: Get user profile
+ *     description: Retrieves the profile information for the authenticated user
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: 60d21b4667d0d8992e610c85
+ *                 email:
+ *                   type: string
+ *                   example: user@example.com
+ *                 encSalt:
+ *                   type: string
+ *                   example: a1b2c3d4e5f6g7h8
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *       401:
+ *         description: Not authorized, no token or invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get("/profile", protect, async (req, res) => {
   try {

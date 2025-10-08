@@ -15,13 +15,24 @@ const corsOptions = {
     process.env.NODE_ENV === "production"
       ? [
           "https://password-vault-frontend.onrender.com",
+          "https://password-vault-frontend.onrender.com/",
           process.env.FRONTEND_URL,
+          process.env.FRONTEND_URL
+            ? process.env.FRONTEND_URL.replace(/\/+$/, "")
+            : null,
           // Add any additional frontend URLs here
         ].filter(Boolean)
       : ["http://localhost:3000"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "Origin",
+    "X-Requested-With",
+    "Accept",
+  ],
+  optionsSuccessStatus: 204,
 };
 
 app.use(cors(corsOptions));
@@ -36,13 +47,38 @@ app.use((req, res, next) => {
   next();
 });
 
-// Request logging in production
-if (process.env.NODE_ENV === "production") {
-  app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    next();
+// Request logging for all environments
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  // Log detailed request information
+  console.log(`[${timestamp}] ${req.method} ${req.path}`);
+  console.log(`  Origin: ${req.headers.origin || "unknown"}`);
+  console.log(`  User-Agent: ${req.headers["user-agent"] || "unknown"}`);
+
+  // Log response when it completes
+  res.on("finish", () => {
+    console.log(
+      `[${timestamp}] Response: ${res.statusCode} ${res.statusMessage}`
+    );
   });
-}
+
+  next();
+});
+
+// Root route for easy testing
+app.get("/", (req, res) => {
+  res.json({
+    message: "Password Vault API is running",
+    version: "1.0.0",
+    endpoints: [
+      "/api/health",
+      "/api/auth",
+      "/api/users",
+      "/api/vault",
+      "/api-docs",
+    ],
+  });
+});
 
 /**
  * @openapi
@@ -65,6 +101,28 @@ if (process.env.NODE_ENV === "production") {
  *                   example: ok
  */
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+
+// Additional plain health route for render health checks
+app.get("/health", (req, res) => res.json({ status: "ok" }));
+
+// Debug endpoint to help troubleshoot API connectivity issues
+app.get("/api/debug", (req, res) => {
+  res.json({
+    cors: {
+      origin: corsOptions.origin,
+      methods: corsOptions.methods,
+      allowedHeaders: corsOptions.allowedHeaders,
+    },
+    environment: process.env.NODE_ENV,
+    requestInfo: {
+      origin: req.headers.origin || "not provided",
+      host: req.headers.host,
+      userAgent: req.headers["user-agent"],
+    },
+    timestamp: new Date().toISOString(),
+    // Don't include sensitive info like JWT_SECRET
+  });
+});
 
 // Import routes
 import authRoutes from "./routes/auth.js";

@@ -16,7 +16,7 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     autoDeploy: true
 
   # Frontend Service

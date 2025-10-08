@@ -3,11 +3,16 @@ import axios from "axios";
 // API Base URL - automatically switches between development and production
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-console.log("API Base URL:", API_BASE_URL);
+// Remove trailing slash if it exists
+const cleanBaseUrl = API_BASE_URL.endsWith("/")
+  ? API_BASE_URL.slice(0, -1)
+  : API_BASE_URL;
+
+console.log("API Base URL:", cleanBaseUrl);
 
 // Create an axios instance with base URL and default settings
 const api = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
+  baseURL: `${cleanBaseUrl}/api`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -30,7 +35,19 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Enhanced error logging
+    console.error("API Error:", {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+    });
+
+    // Handle 401 Unauthorized errors
     if (error.response?.status === 401) {
+      console.log("Unauthorized - redirecting to login");
       // Clear token and redirect to login on 401
       localStorage.removeItem("token");
       localStorage.removeItem("user");
@@ -38,6 +55,7 @@ api.interceptors.response.use(
         window.location.href = "/login";
       }
     }
+
     return Promise.reject(error);
   }
 );

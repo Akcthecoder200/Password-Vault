@@ -21,20 +21,18 @@ fi
 
 echo " Ensuring postcss.config.js exists and is correct..."
 cat > postcss.config.js << "EOL"
-const config = {
+module.exports = {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},
   },
 };
-
-export default config;
 EOL
 
 echo " Ensuring tailwind.config.js exists and is correct..."
 cat > tailwind.config.js << "EOL"
 /** @type {import("tailwindcss").Config} */
-const config = {
+module.exports = {
   content: [
     "./pages/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
@@ -63,8 +61,6 @@ const config = {
   },
   plugins: [],
 };
-
-export default config;
 EOL
 
 echo " Ensuring globals.css has proper Tailwind directives..."

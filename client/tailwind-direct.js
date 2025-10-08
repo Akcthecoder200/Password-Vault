@@ -17,14 +17,12 @@ console.log("🔍 Starting Tailwind CSS setup and fallback generation...");
 const postcssConfigPath = path.join(__dirname, "postcss.config.js");
 if (!fs.existsSync(postcssConfigPath)) {
   console.log("📄 Creating postcss.config.js...");
-  const postcssConfig = `const config = {
+  const postcssConfig = `module.exports = {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},
   },
 };
-
-export default config;
 `;
   fs.writeFileSync(postcssConfigPath, postcssConfig);
 }
@@ -33,7 +31,7 @@ const tailwindConfigPath = path.join(__dirname, "tailwind.config.js");
 if (!fs.existsSync(tailwindConfigPath)) {
   console.log("📄 Creating tailwind.config.js...");
   const tailwindConfig = `/** @type {import('tailwindcss').Config} */
-const config = {
+module.exports = {
   content: [
     "./pages/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
@@ -62,8 +60,6 @@ const config = {
   },
   plugins: [],
 };
-
-export default config;
 `;
   fs.writeFileSync(tailwindConfigPath, tailwindConfig);
 }

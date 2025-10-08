@@ -2,7 +2,7 @@
 
 A secure, modern password management application with client-side encryption.
 
-![Password Vault](https://via.placeholder.com/800x400?text=Password+Vault)
+
 
 ## Features
 

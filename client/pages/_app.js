@@ -1,4 +1,6 @@
 import "../styles/globals.css";
+// Uncomment the line below if Tailwind CSS fails to load during deployment
+// import "../styles/tailwind-fallback";
 import { AuthProvider } from "../utils/auth";
 import { EncryptionProvider } from "../utils/encryptionContext";
 import Layout from "../components/layout/Layout";

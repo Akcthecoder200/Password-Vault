@@ -6,6 +6,7 @@ import {
   decryptVaultItem,
   generateEncryptionSalt,
 } from "./encryption";
+import { resetEncryptionState } from "./reset";
 
 // Create encryption context
 const EncryptionContext = createContext();
@@ -198,7 +199,7 @@ export function EncryptionProvider({ children }) {
     return await encryptVaultItem(item, encryptionKey);
   };
 
-  // Decrypt a vault item
+  // Decrypt a vault item with enhanced error handling and recovery
   const decrypt = async (encryptedItem) => {
     if (!encryptionReady || !encryptionKey) {
       console.warn("Encryption not initialized, attempting recovery...");
@@ -210,8 +211,57 @@ export function EncryptionProvider({ children }) {
         throw new Error("Encryption not initialized");
       }
     }
-
-    return await decryptVaultItem(encryptedItem, encryptionKey);
+    
+    try {
+      return await decryptVaultItem(encryptedItem, encryptionKey);
+    } catch (error) {
+      // Check if it's a "wrong secret key" error (which indicates key derivation parameters changed)
+      if (error.message && error.message.includes("wrong secret key")) {
+        console.error("Decryption failed with wrong key error - this likely means the key derivation parameters changed");
+        
+        // Track wrong key errors
+        const wrongKeyCount = parseInt(sessionStorage.getItem("wrongKeyErrors") || "0") + 1;
+        sessionStorage.setItem("wrongKeyErrors", wrongKeyCount.toString());
+        
+        // If we have too many wrong key errors, reset the encryption state
+        if (wrongKeyCount >= 3) {
+          console.warn("Multiple wrong key errors detected, resetting encryption state");
+          resetEncryptionState();
+          setEncryptionReady(false);
+          setEncryptionKey(null);
+          
+          // After 5 errors, we'll force a page refresh as a last resort
+          if (wrongKeyCount >= 5 && typeof window !== 'undefined') {
+            console.warn("Too many decryption errors, forcing page refresh");
+            sessionStorage.removeItem("wrongKeyErrors");
+            setTimeout(() => window.location.reload(), 1000);
+            throw new Error("Decryption failed repeatedly. The page will refresh to fix this issue.");
+          }
+        }
+        
+        // If we have the password still available, try to re-initialize with the original parameters
+        if (password && localStorage.getItem("encSalt")) {
+          console.log("Attempting to re-initialize encryption with original parameters...");
+          
+          try {
+            // Force re-initialization to use original parameters
+            setEncryptionReady(false);
+            const salt = localStorage.getItem("encSalt");
+            const success = await initializeEncryption(password, salt);
+            
+            if (success) {
+              console.log("Re-initialization successful, retrying decryption");
+              return await decryptVaultItem(encryptedItem, encryptionKey);
+            }
+          } catch (recoverError) {
+            console.error("Failed to recover from wrong key error:", recoverError);
+          }
+        }
+      }
+      
+      // If we couldn't recover, rethrow the original error
+      throw error;
+    }
   };
 
   // Helper function to try to recover encryption state

@@ -16,10 +16,20 @@ export default function VaultItem({ item, onEdit, onDelete }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-4 transition-all hover:shadow-lg">
+    <div className={`bg-white rounded-lg shadow-md p-4 mb-4 transition-all hover:shadow-lg ${
+      item.decryptionFailed ? 'border-2 border-red-300 bg-red-50' : ''
+    }`}>
+      {item.decryptionFailed && (
+        <div className="mb-3 p-2 bg-red-100 text-red-700 text-sm rounded">
+          <strong>Decryption Failed:</strong> This item could not be decrypted with your current key. 
+          Try logging out and back in to fix this issue.
+        </div>
+      )}
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-700 rounded-full">
+          <div className={`w-10 h-10 flex items-center justify-center rounded-full ${
+            item.decryptionFailed ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+          }`}>
             {/* Display first letter of site name or icon */}
             {item.siteName.charAt(0).toUpperCase()}
           </div>

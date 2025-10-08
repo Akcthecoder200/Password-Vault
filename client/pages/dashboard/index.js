@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { withAuth } from "../../utils/auth";
+import { withAuth, useAuth } from "../../utils/auth";
 import { vaultAPI } from "../../utils/api";
 import { useEncryption } from "../../utils/encryptionContext";
 import { searchVaultItems, sortVaultItems } from "../../utils/searchUtils";
+import { resetEncryptionState, resetAppState } from "../../utils/reset";
 import Button from "../../components/Button";
 import VaultItem from "../../components/vault/VaultItem";
 import VaultForm from "../../components/vault/VaultForm";
@@ -60,10 +61,22 @@ function Dashboard() {
       );
       setLoading(false);
 
+      // Check if we're having persistent encryption issues
+      const failedAttempts = parseInt(sessionStorage.getItem("encryptionFailedAttempts") || "0");
+      sessionStorage.setItem("encryptionFailedAttempts", (failedAttempts + 1).toString());
+      
+      // If we've tried too many times, suggest a logout/login cycle
+      if (failedAttempts >= 3) {
+        setError(
+          "Encryption initialization is failing. Please try logging out and logging back in to fix this issue."
+        );
+      }
+
       // Retry after a delay to see if encryption becomes ready
       setTimeout(() => {
         if (encryptionReady) {
           setError("");
+          sessionStorage.removeItem("encryptionFailedAttempts");
           fetchVaultItems();
         }
       }, 3000); // Wait 3 seconds and retry
@@ -96,9 +109,25 @@ function Dashboard() {
               ...decryptedData,
               createdAt: encryptedItem.createdAt,
               updatedAt: encryptedItem.updatedAt,
+              decryptionSuccessful: true
             };
           } catch (error) {
             console.error("Failed to decrypt item:", error);
+            
+            // Track decryption failures
+            const decryptFailures = parseInt(sessionStorage.getItem("decryptFailures") || "0") + 1;
+            sessionStorage.setItem("decryptFailures", decryptFailures.toString());
+            
+            // If we're seeing widespread decryption failures, show a more prominent error
+            if (decryptFailures > 3) {
+              setError("Multiple decryption failures detected. You may need to log out and log back in to fix this issue.");
+              
+              // After 10 failures, suggest a more drastic solution
+              if (decryptFailures > 10) {
+                setError("Persistent decryption failures detected. Please log out and log back in to resolve this issue.");
+              }
+            }
+            
             // Return a placeholder for failed decryption
             return {
               _id: encryptedItem._id,
@@ -106,10 +135,12 @@ function Dashboard() {
               username: "Unknown",
               password: "********",
               siteUrl: "",
-              notes:
-                "This item could not be decrypted. It may be corrupted or was encrypted with a different key.",
+              notes: error.message?.includes("wrong secret key") 
+                ? "This item could not be decrypted due to an encryption key mismatch. Try logging out and back in."
+                : "This item could not be decrypted. It may be corrupted or was encrypted with a different key.",
               createdAt: encryptedItem.createdAt,
               updatedAt: encryptedItem.updatedAt,
+              decryptionFailed: true
             };
           }
         })
@@ -271,6 +302,28 @@ function Dashboard() {
     setEditingItem(null);
   };
 
+  // Get the logout function from auth context
+  const { logout } = useAuth();
+  
+  // Handle encryption reset
+  const handleEncryptionReset = () => {
+    // Reset encryption state
+    resetEncryptionState();
+    alert("Encryption state has been reset. Please refresh the page.");
+    setTimeout(() => window.location.reload(), 1000);
+  };
+  
+  // Handle full reset and logout
+  const handleFullReset = () => {
+    if (confirm("This will log you out and reset the app. Continue?")) {
+      resetAppState();
+      logout();
+    }
+  };
+  
+  // Check if we have decryption errors
+  const hasDecryptionErrors = parseInt(sessionStorage.getItem("decryptFailures") || "0") > 0;
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -296,6 +349,24 @@ function Dashboard() {
       {error && (
         <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
           {error}
+          
+          {/* Show reset buttons if we have decryption errors */}
+          {hasDecryptionErrors && (
+            <div className="mt-3 flex space-x-3">
+              <button 
+                className="text-sm font-medium px-3 py-1 bg-red-100 hover:bg-red-200 rounded"
+                onClick={handleEncryptionReset}
+              >
+                Reset Encryption State
+              </button>
+              <button 
+                className="text-sm font-medium px-3 py-1 bg-red-100 hover:bg-red-200 rounded"
+                onClick={handleFullReset}
+              >
+                Reset & Logout
+              </button>
+            </div>
+          )}
         </div>
       )}
 

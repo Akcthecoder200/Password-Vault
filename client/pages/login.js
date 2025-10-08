@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "../components/Button";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useAuth } from "../utils/auth";
 import { useEncryption } from "../utils/encryptionContext";
+import _sodium from "libsodium-wrappers"; // Import sodium for preloading
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -12,9 +13,28 @@ export default function Login() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [sodiumLoaded, setSodiumLoaded] = useState(false);
   const { login } = useAuth();
   const { initializeEncryption } = useEncryption();
   const router = useRouter();
+  
+  // Preload sodium library when component mounts
+  useEffect(() => {
+    async function preloadSodium() {
+      try {
+        console.log("Preloading sodium library...");
+        const startTime = performance.now();
+        await _sodium.ready;
+        const endTime = performance.now();
+        console.log(`Sodium preloaded in ${(endTime - startTime).toFixed(2)}ms`);
+        setSodiumLoaded(true);
+      } catch (error) {
+        console.error("Failed to preload sodium:", error);
+      }
+    }
+    
+    preloadSodium();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,30 +46,23 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    
+    const startTime = performance.now();
+    console.log("Login process started");
 
     try {
-      // First, check if sodium is available
-      try {
-        const sodium = await import("libsodium-wrappers");
-        await sodium.default.ready;
-        console.log("Sodium initialized successfully");
-      } catch (sodiumError) {
-        console.error("Failed to initialize sodium:", sodiumError);
-        setError(
-          "Encryption library failed to load. Please refresh and try again."
-        );
-        setIsLoading(false);
-        return;
+      // Skip sodium initialization check since we preloaded it
+      if (!sodiumLoaded) {
+        console.log("Waiting for sodium to load...");
+        // Small timeout to give sodium a chance to finish loading if it hasn't already
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
+      console.log("Sending login request...");
       const result = await login(formData);
+      console.log(`Login request completed in ${(performance.now() - startTime).toFixed(2)}ms`);
 
       if (result.success) {
-        console.log(
-          "Login successful, initializing encryption with salt:",
-          result.encSalt ? "present" : "missing"
-        );
-
         if (!result.encSalt) {
           setError(
             "Login successful but encryption salt is missing. Please contact support."
@@ -58,11 +71,16 @@ export default function Login() {
           return;
         }
 
+        console.log("Initializing encryption...");
+        const encInitStart = performance.now();
+        
         // Initialize encryption with the user's password and salt
         const encryptionSuccess = await initializeEncryption(
           formData.password,
           result.encSalt
         );
+
+        console.log(`Encryption initialized in ${(performance.now() - encInitStart).toFixed(2)}ms`);
 
         if (!encryptionSuccess) {
           setError("Failed to initialize encryption. Please try again.");
@@ -70,6 +88,9 @@ export default function Login() {
           return;
         }
 
+        const totalTime = performance.now() - startTime;
+        console.log(`Total login process completed in ${totalTime.toFixed(2)}ms`);
+        
         router.push("/dashboard");
       } else {
         setError(

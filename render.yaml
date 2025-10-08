@@ -5,7 +5,7 @@ services:
     env: node
     plan: free
     region: oregon
-    buildCommand: cd server && npm install
+    buildCommand: cd server && chmod +x deploy.sh && ./deploy.sh
     startCommand: cd server && npm start
     envVars:
       - key: NODE_ENV
@@ -13,7 +13,9 @@ services:
       - key: PORT
         value: 4000
       - key: MONGODB_URI
-        sync: false
+        sync: false  # This needs to be set manually in the Render dashboard
+                     # Make sure to include the database name at the end of your MongoDB URI:
+                     # mongodb+srv://username:password@cluster.mongodb.net/password_vault
       - key: JWT_SECRET
         generateValue: true
     healthCheckPath: /health

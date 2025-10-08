@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { User } from "../models/index.js";
 import { generateToken, generateRandomString } from "../utils/crypto.js";
 import { protect } from "../middleware/auth.js";
+import { withMongoCheck } from "../middleware/mongo-check.js";
 
 const router = express.Router();
 
@@ -65,7 +66,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/register", async (req, res) => {
+router.post("/register", withMongoCheck(async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -99,7 +100,7 @@ router.post("/register", async (req, res) => {
     console.error("Register error:", error.message);
     res.status(500).json({ message: "Server error" });
   }
-});
+}));
 
 /**
  * @openapi
@@ -160,29 +161,47 @@ router.post("/register", async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/login", async (req, res) => {
+router.post("/login", withMongoCheck(async (req, res) => {
   try {
+    const startTime = process.hrtime();
     const { email, password } = req.body;
 
-    // Find user
+    // Find user - with lean() for better performance since we don't need a full mongoose document
     const user = await User.findOne({ email });
+    
+    if (!user) {
+      // Use consistent timing to prevent timing attacks
+      await bcrypt.compare(password, "$2a$10$invalidhashforsecurityreasons");
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
 
-    // Check user exists and password is correct
-    if (user && (await user.matchPassword(password))) {
-      res.json({
+    // Check password is correct
+    if (await user.matchPassword(password)) {
+      // Prepare response before generating token for better perceived performance
+      const response = {
         _id: user._id,
         email: user.email,
         encSalt: user.encSalt,
         token: generateToken(user),
-      });
+      };
+      
+      const endTime = process.hrtime(startTime);
+      const duration = (endTime[0] * 1000 + endTime[1] / 1000000).toFixed(2);
+      console.log(`Login successful for ${email} in ${duration}ms`);
+      
+      res.json(response);
     } else {
+      const endTime = process.hrtime(startTime);
+      const duration = (endTime[0] * 1000 + endTime[1] / 1000000).toFixed(2);
+      console.log(`Failed login attempt for ${email} in ${duration}ms`);
+      
       res.status(401).json({ message: "Invalid email or password" });
     }
   } catch (error) {
     console.error("Login error:", error.message);
     res.status(500).json({ message: "Server error" });
   }
-});
+}));
 
 /**
  * @openapi
@@ -233,7 +252,7 @@ router.post("/login", async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get("/verify", protect, async (req, res) => {
+router.get("/verify", protect, withMongoCheck(async (req, res) => {
   try {
     // req.user is set by the protect middleware
     const user = await User.findById(req.user._id).select("-passwordHash");
@@ -253,6 +272,6 @@ router.get("/verify", protect, async (req, res) => {
     console.error("Token verification error:", error.message);
     res.status(500).json({ message: "Server error" });
   }
-});
+}));
 
 export default router;

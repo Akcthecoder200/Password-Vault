@@ -8,8 +8,40 @@ import setupSwagger from "./config/swagger.js";
 connectDB();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+// CORS configuration for production
+const corsOptions = {
+  origin:
+    process.env.NODE_ENV === "production"
+      ? [
+          "https://password-vault-frontend.onrender.com",
+          process.env.FRONTEND_URL,
+        ].filter(Boolean)
+      : ["http://localhost:3000"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.use(express.json({ limit: "10mb" }));
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+
+// Request logging in production
+if (process.env.NODE_ENV === "production") {
+  app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+  });
+}
 
 /**
  * @openapi

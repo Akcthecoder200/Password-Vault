@@ -1,0 +1,37 @@
+services:
+  # Backend API Service
+  - type: web
+    name: password-vault-api
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    rootDir: server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+  # Frontend Service
+  - type: web
+    name: password-vault-frontend
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    rootDir: client
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://password-vault-api.onrender.com
+    autoDeploy: true

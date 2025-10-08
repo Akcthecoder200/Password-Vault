@@ -4,9 +4,13 @@
   "main": "index.js",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "build": "echo 'No build step required'"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",

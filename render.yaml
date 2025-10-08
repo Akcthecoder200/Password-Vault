@@ -5,9 +5,8 @@ services:
     env: node
     plan: free
     region: oregon
-    buildCommand: npm install
-    startCommand: npm start
-    rootDir: server
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -26,9 +25,8 @@ services:
     env: node
     plan: free
     region: oregon
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    rootDir: client
+    buildCommand: cd client && npm install && npm run build
+    startCommand: cd client && npm start
     envVars:
       - key: NODE_ENV
         value: production

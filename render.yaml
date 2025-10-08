@@ -13,9 +13,10 @@ services:
       - key: PORT
         value: 4000
       - key: MONGODB_URI
-        sync: false  # This needs to be set manually in the Render dashboard
-                     # Make sure to include the database name at the end of your MongoDB URI:
-                     # mongodb+srv://username:password@cluster.mongodb.net/password_vault
+        sync:
+          false # This needs to be set manually in the Render dashboard
+          # Make sure to include the database name at the end of your MongoDB URI:
+          # mongodb+srv://username:password@cluster.mongodb.net/password_vault
       - key: JWT_SECRET
         generateValue: true
     healthCheckPath: /health

@@ -6,17 +6,20 @@ import connectDB from "./config/db.js";
 import setupSwagger from "./config/swagger.js";
 
 // Print environment info for debugging (without sensitive data)
-console.log(`Starting server in ${process.env.NODE_ENV || 'development'} mode`);
-console.log(`MongoDB URI set: ${process.env.MONGODB_URI ? 'Yes' : 'No'}`);
-console.log(`PORT: ${process.env.PORT || '4000'}`);
-console.log(`JWT_SECRET set: ${process.env.JWT_SECRET ? 'Yes' : 'No'}`);
+console.log(`Starting server in ${process.env.NODE_ENV || "development"} mode`);
+console.log(`MongoDB URI set: ${process.env.MONGODB_URI ? "Yes" : "No"}`);
+console.log(`PORT: ${process.env.PORT || "4000"}`);
+console.log(`JWT_SECRET set: ${process.env.JWT_SECRET ? "Yes" : "No"}`);
 
 // Connect to MongoDB - we'll make this async but not block server startup
 (async () => {
   try {
     await connectDB();
   } catch (error) {
-    console.error("Failed to connect to MongoDB during startup:", error.message);
+    console.error(
+      "Failed to connect to MongoDB during startup:",
+      error.message
+    );
     // Server will still start, but MongoDB operations will fail until connection is established
   }
 })();
@@ -119,14 +122,14 @@ app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 // Enhanced health check route for Render that checks database connectivity
 app.get("/health", async (req, res) => {
   const isDbConnected = mongoose.connection.readyState === 1; // 1 = connected
-  
+
   // Always return 200 for Render health check to prevent restarts
   res.json({
     status: "ok",
     server: "running",
     timestamp: new Date().toISOString(),
     database: isDbConnected ? "connected" : "disconnected",
-    environment: process.env.NODE_ENV || "development"
+    environment: process.env.NODE_ENV || "development",
   });
 });
 

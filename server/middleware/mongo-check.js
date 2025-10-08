@@ -16,13 +16,14 @@ export function isMongoConnected() {
 export function withMongoCheck(handler) {
   return async (req, res, next) => {
     if (!isMongoConnected()) {
-      console.warn('MongoDB not connected, route execution skipped');
-      return res.status(503).json({ 
-        error: 'Database unavailable', 
-        message: 'The database is currently unavailable. Please try again later.' 
+      console.warn("MongoDB not connected, route execution skipped");
+      return res.status(503).json({
+        error: "Database unavailable",
+        message:
+          "The database is currently unavailable. Please try again later.",
       });
     }
-    
+
     // If connected, proceed with the original handler
     return handler(req, res, next);
   };

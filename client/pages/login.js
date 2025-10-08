@@ -17,7 +17,7 @@ export default function Login() {
   const { login } = useAuth();
   const { initializeEncryption } = useEncryption();
   const router = useRouter();
-  
+
   // Preload sodium library when component mounts
   useEffect(() => {
     async function preloadSodium() {
@@ -26,13 +26,15 @@ export default function Login() {
         const startTime = performance.now();
         await _sodium.ready;
         const endTime = performance.now();
-        console.log(`Sodium preloaded in ${(endTime - startTime).toFixed(2)}ms`);
+        console.log(
+          `Sodium preloaded in ${(endTime - startTime).toFixed(2)}ms`
+        );
         setSodiumLoaded(true);
       } catch (error) {
         console.error("Failed to preload sodium:", error);
       }
     }
-    
+
     preloadSodium();
   }, []);
 
@@ -46,7 +48,7 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    
+
     const startTime = performance.now();
     console.log("Login process started");
 
@@ -55,12 +57,16 @@ export default function Login() {
       if (!sodiumLoaded) {
         console.log("Waiting for sodium to load...");
         // Small timeout to give sodium a chance to finish loading if it hasn't already
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
 
       console.log("Sending login request...");
       const result = await login(formData);
-      console.log(`Login request completed in ${(performance.now() - startTime).toFixed(2)}ms`);
+      console.log(
+        `Login request completed in ${(performance.now() - startTime).toFixed(
+          2
+        )}ms`
+      );
 
       if (result.success) {
         if (!result.encSalt) {
@@ -73,14 +79,18 @@ export default function Login() {
 
         console.log("Initializing encryption...");
         const encInitStart = performance.now();
-        
+
         // Initialize encryption with the user's password and salt
         const encryptionSuccess = await initializeEncryption(
           formData.password,
           result.encSalt
         );
 
-        console.log(`Encryption initialized in ${(performance.now() - encInitStart).toFixed(2)}ms`);
+        console.log(
+          `Encryption initialized in ${(
+            performance.now() - encInitStart
+          ).toFixed(2)}ms`
+        );
 
         if (!encryptionSuccess) {
           setError("Failed to initialize encryption. Please try again.");
@@ -89,8 +99,10 @@ export default function Login() {
         }
 
         const totalTime = performance.now() - startTime;
-        console.log(`Total login process completed in ${totalTime.toFixed(2)}ms`);
-        
+        console.log(
+          `Total login process completed in ${totalTime.toFixed(2)}ms`
+        );
+
         router.push("/dashboard");
       } else {
         setError(

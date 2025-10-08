@@ -66,41 +66,44 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/register", withMongoCheck(async (req, res) => {
-  try {
-    const { email, password } = req.body;
+router.post(
+  "/register",
+  withMongoCheck(async (req, res) => {
+    try {
+      const { email, password } = req.body;
 
-    // Check if user already exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
+      // Check if user already exists
+      const userExists = await User.findOne({ email });
+      if (userExists) {
+        return res.status(400).json({ message: "User already exists" });
+      }
 
-    // Generate salt for client-side encryption (different from bcrypt salt)
-    const encSalt = generateRandomString(16);
+      // Generate salt for client-side encryption (different from bcrypt salt)
+      const encSalt = generateRandomString(16);
 
-    // Create user (bcrypt hashing happens in the pre-save hook)
-    const user = await User.create({
-      email,
-      passwordHash: password, // Will be hashed by pre-save hook
-      encSalt,
-    });
-
-    if (user) {
-      res.status(201).json({
-        _id: user._id,
-        email: user.email,
-        encSalt: user.encSalt,
-        token: generateToken(user),
+      // Create user (bcrypt hashing happens in the pre-save hook)
+      const user = await User.create({
+        email,
+        passwordHash: password, // Will be hashed by pre-save hook
+        encSalt,
       });
-    } else {
-      res.status(400).json({ message: "Invalid user data" });
+
+      if (user) {
+        res.status(201).json({
+          _id: user._id,
+          email: user.email,
+          encSalt: user.encSalt,
+          token: generateToken(user),
+        });
+      } else {
+        res.status(400).json({ message: "Invalid user data" });
+      }
+    } catch (error) {
+      console.error("Register error:", error.message);
+      res.status(500).json({ message: "Server error" });
     }
-  } catch (error) {
-    console.error("Register error:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-}));
+  })
+);
 
 /**
  * @openapi
@@ -161,47 +164,50 @@ router.post("/register", withMongoCheck(async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/login", withMongoCheck(async (req, res) => {
-  try {
-    const startTime = process.hrtime();
-    const { email, password } = req.body;
+router.post(
+  "/login",
+  withMongoCheck(async (req, res) => {
+    try {
+      const startTime = process.hrtime();
+      const { email, password } = req.body;
 
-    // Find user - with lean() for better performance since we don't need a full mongoose document
-    const user = await User.findOne({ email });
-    
-    if (!user) {
-      // Use consistent timing to prevent timing attacks
-      await bcrypt.compare(password, "$2a$10$invalidhashforsecurityreasons");
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
+      // Find user - with lean() for better performance since we don't need a full mongoose document
+      const user = await User.findOne({ email });
 
-    // Check password is correct
-    if (await user.matchPassword(password)) {
-      // Prepare response before generating token for better perceived performance
-      const response = {
-        _id: user._id,
-        email: user.email,
-        encSalt: user.encSalt,
-        token: generateToken(user),
-      };
-      
-      const endTime = process.hrtime(startTime);
-      const duration = (endTime[0] * 1000 + endTime[1] / 1000000).toFixed(2);
-      console.log(`Login successful for ${email} in ${duration}ms`);
-      
-      res.json(response);
-    } else {
-      const endTime = process.hrtime(startTime);
-      const duration = (endTime[0] * 1000 + endTime[1] / 1000000).toFixed(2);
-      console.log(`Failed login attempt for ${email} in ${duration}ms`);
-      
-      res.status(401).json({ message: "Invalid email or password" });
+      if (!user) {
+        // Use consistent timing to prevent timing attacks
+        await bcrypt.compare(password, "$2a$10$invalidhashforsecurityreasons");
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Check password is correct
+      if (await user.matchPassword(password)) {
+        // Prepare response before generating token for better perceived performance
+        const response = {
+          _id: user._id,
+          email: user.email,
+          encSalt: user.encSalt,
+          token: generateToken(user),
+        };
+
+        const endTime = process.hrtime(startTime);
+        const duration = (endTime[0] * 1000 + endTime[1] / 1000000).toFixed(2);
+        console.log(`Login successful for ${email} in ${duration}ms`);
+
+        res.json(response);
+      } else {
+        const endTime = process.hrtime(startTime);
+        const duration = (endTime[0] * 1000 + endTime[1] / 1000000).toFixed(2);
+        console.log(`Failed login attempt for ${email} in ${duration}ms`);
+
+        res.status(401).json({ message: "Invalid email or password" });
+      }
+    } catch (error) {
+      console.error("Login error:", error.message);
+      res.status(500).json({ message: "Server error" });
     }
-  } catch (error) {
-    console.error("Login error:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-}));
+  })
+);
 
 /**
  * @openapi
@@ -252,26 +258,30 @@ router.post("/login", withMongoCheck(async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get("/verify", protect, withMongoCheck(async (req, res) => {
-  try {
-    // req.user is set by the protect middleware
-    const user = await User.findById(req.user._id).select("-passwordHash");
+router.get(
+  "/verify",
+  protect,
+  withMongoCheck(async (req, res) => {
+    try {
+      // req.user is set by the protect middleware
+      const user = await User.findById(req.user._id).select("-passwordHash");
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({
+        user: {
+          _id: user._id,
+          email: user.email,
+          name: user.name || user.email.split("@")[0], // Use email prefix as name if name is not set
+        },
+      });
+    } catch (error) {
+      console.error("Token verification error:", error.message);
+      res.status(500).json({ message: "Server error" });
     }
-
-    res.json({
-      user: {
-        _id: user._id,
-        email: user.email,
-        name: user.name || user.email.split("@")[0], // Use email prefix as name if name is not set
-      },
-    });
-  } catch (error) {
-    console.error("Token verification error:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-}));
+  })
+);
 
 export default router;

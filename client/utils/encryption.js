@@ -17,7 +17,7 @@ let initializationPromise = null;
 async function initSodium() {
   // If sodium is already initialized, return it immediately
   if (isReady) return sodium;
-  
+
   // If initialization is in progress, return the existing promise
   if (initializationPromise) return initializationPromise;
 
@@ -26,15 +26,19 @@ async function initSodium() {
     try {
       console.log("Initializing sodium library...");
       const startTime = performance.now();
-      
+
       // Wait for sodium to initialize
       await _sodium.ready;
       sodium = _sodium;
       isReady = true;
-      
+
       const endTime = performance.now();
-      console.log(`Sodium initialization complete in ${(endTime - startTime).toFixed(2)}ms`);
-      
+      console.log(
+        `Sodium initialization complete in ${(endTime - startTime).toFixed(
+          2
+        )}ms`
+      );
+
       return sodium;
     } catch (error) {
       console.error("Failed to initialize libsodium:", error);
@@ -63,13 +67,13 @@ export async function deriveEncryptionKey(password, salt) {
   try {
     // Generate a cache key (don't store actual passwords in cache keys)
     const cacheKey = `${btoa(password.slice(0, 2))}:${salt.slice(0, 10)}`;
-    
+
     // Check if we have a cached key
     if (keyCache.has(cacheKey)) {
       console.log("Using cached encryption key");
       return keyCache.get(cacheKey);
     }
-    
+
     console.log("Deriving encryption key - this may take a moment");
     const startTime = performance.now();
     const sodium = await initSodium();
@@ -85,7 +89,7 @@ export async function deriveEncryptionKey(password, salt) {
       // and break decryption of existing data.
       const passwordBuffer = sodium.from_string(password);
       const saltBuffer = sodium.from_base64(salt);
-      
+
       // Use the original default parameters for compatibility with existing data
       key = sodium.crypto_pwhash(
         sodium.crypto_secretbox_KEYBYTES,
@@ -98,18 +102,20 @@ export async function deriveEncryptionKey(password, salt) {
     }
 
     const endTime = performance.now();
-    console.log(`Key derivation completed in ${(endTime - startTime).toFixed(2)}ms`);
-    
+    console.log(
+      `Key derivation completed in ${(endTime - startTime).toFixed(2)}ms`
+    );
+
     // Cache the derived key
     keyCache.set(cacheKey, key);
-    
+
     // Limit cache size to avoid memory issues
     if (keyCache.size > 5) {
       // Remove the oldest entry
       const firstKey = keyCache.keys().next().value;
       keyCache.delete(firstKey);
     }
-    
+
     return key;
   } catch (error) {
     console.error("Key derivation failed:", error);
@@ -202,14 +208,17 @@ export async function decryptVaultItem(encryptedItem, key) {
       console.error("Invalid encrypted item:", encryptedItem);
       throw new Error("Invalid encrypted item format");
     }
-    
+
     if (!key || !(key instanceof Uint8Array) || key.length !== 32) {
-      console.error("Invalid encryption key:", key ? "wrong format" : "missing");
+      console.error(
+        "Invalid encryption key:",
+        key ? "wrong format" : "missing"
+      );
       throw new Error("Invalid encryption key format");
     }
-    
+
     const sodium = await initSodium();
-    
+
     try {
       const ciphertext = sodium.from_base64(encryptedItem.ciphertext);
       const nonce = sodium.from_base64(encryptedItem.nonce);
@@ -236,7 +245,9 @@ export async function decryptVaultItem(encryptedItem, key) {
     }
   } catch (error) {
     if (error.message && error.message.includes("wrong secret key")) {
-      console.error("Decryption failed - wrong secret key error indicates possible key derivation parameter mismatch");
+      console.error(
+        "Decryption failed - wrong secret key error indicates possible key derivation parameter mismatch"
+      );
       // Rethrow the original error to preserve the "wrong secret key" message for recovery logic
       throw error;
     } else {

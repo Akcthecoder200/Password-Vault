@@ -9,14 +9,14 @@
  */
 export function resetEncryptionState() {
   console.log("Resetting encryption state due to decryption issues");
-  
+
   // Clear encryption-related items from storage
   sessionStorage.removeItem("encryptionStatus");
   sessionStorage.removeItem("temp_password");
-  
+
   // Don't remove encSalt as it's needed for re-login
   // localStorage.removeItem("encSalt");
-  
+
   return true;
 }
 
@@ -27,12 +27,12 @@ export function resetEncryptionState() {
  */
 export function resetAppState() {
   console.log("Performing full app state reset");
-  
+
   // Clear all relevant storage
   sessionStorage.clear();
   localStorage.removeItem("token");
   localStorage.removeItem("user");
   localStorage.removeItem("encSalt");
-  
+
   return true;
 }

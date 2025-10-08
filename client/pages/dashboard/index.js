@@ -62,9 +62,14 @@ function Dashboard() {
       setLoading(false);
 
       // Check if we're having persistent encryption issues
-      const failedAttempts = parseInt(sessionStorage.getItem("encryptionFailedAttempts") || "0");
-      sessionStorage.setItem("encryptionFailedAttempts", (failedAttempts + 1).toString());
-      
+      const failedAttempts = parseInt(
+        sessionStorage.getItem("encryptionFailedAttempts") || "0"
+      );
+      sessionStorage.setItem(
+        "encryptionFailedAttempts",
+        (failedAttempts + 1).toString()
+      );
+
       // If we've tried too many times, suggest a logout/login cycle
       if (failedAttempts >= 3) {
         setError(
@@ -109,25 +114,33 @@ function Dashboard() {
               ...decryptedData,
               createdAt: encryptedItem.createdAt,
               updatedAt: encryptedItem.updatedAt,
-              decryptionSuccessful: true
+              decryptionSuccessful: true,
             };
           } catch (error) {
             console.error("Failed to decrypt item:", error);
-            
+
             // Track decryption failures
-            const decryptFailures = parseInt(sessionStorage.getItem("decryptFailures") || "0") + 1;
-            sessionStorage.setItem("decryptFailures", decryptFailures.toString());
-            
+            const decryptFailures =
+              parseInt(sessionStorage.getItem("decryptFailures") || "0") + 1;
+            sessionStorage.setItem(
+              "decryptFailures",
+              decryptFailures.toString()
+            );
+
             // If we're seeing widespread decryption failures, show a more prominent error
             if (decryptFailures > 3) {
-              setError("Multiple decryption failures detected. You may need to log out and log back in to fix this issue.");
-              
+              setError(
+                "Multiple decryption failures detected. You may need to log out and log back in to fix this issue."
+              );
+
               // After 10 failures, suggest a more drastic solution
               if (decryptFailures > 10) {
-                setError("Persistent decryption failures detected. Please log out and log back in to resolve this issue.");
+                setError(
+                  "Persistent decryption failures detected. Please log out and log back in to resolve this issue."
+                );
               }
             }
-            
+
             // Return a placeholder for failed decryption
             return {
               _id: encryptedItem._id,
@@ -135,12 +148,12 @@ function Dashboard() {
               username: "Unknown",
               password: "********",
               siteUrl: "",
-              notes: error.message?.includes("wrong secret key") 
+              notes: error.message?.includes("wrong secret key")
                 ? "This item could not be decrypted due to an encryption key mismatch. Try logging out and back in."
                 : "This item could not be decrypted. It may be corrupted or was encrypted with a different key.",
               createdAt: encryptedItem.createdAt,
               updatedAt: encryptedItem.updatedAt,
-              decryptionFailed: true
+              decryptionFailed: true,
             };
           }
         })
@@ -304,7 +317,7 @@ function Dashboard() {
 
   // Get the logout function from auth context
   const { logout } = useAuth();
-  
+
   // Handle encryption reset
   const handleEncryptionReset = () => {
     // Reset encryption state
@@ -312,7 +325,7 @@ function Dashboard() {
     alert("Encryption state has been reset. Please refresh the page.");
     setTimeout(() => window.location.reload(), 1000);
   };
-  
+
   // Handle full reset and logout
   const handleFullReset = () => {
     if (confirm("This will log you out and reset the app. Continue?")) {
@@ -320,9 +333,10 @@ function Dashboard() {
       logout();
     }
   };
-  
+
   // Check if we have decryption errors
-  const hasDecryptionErrors = parseInt(sessionStorage.getItem("decryptFailures") || "0") > 0;
+  const hasDecryptionErrors =
+    parseInt(sessionStorage.getItem("decryptFailures") || "0") > 0;
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -349,17 +363,17 @@ function Dashboard() {
       {error && (
         <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
           {error}
-          
+
           {/* Show reset buttons if we have decryption errors */}
           {hasDecryptionErrors && (
             <div className="mt-3 flex space-x-3">
-              <button 
+              <button
                 className="text-sm font-medium px-3 py-1 bg-red-100 hover:bg-red-200 rounded"
                 onClick={handleEncryptionReset}
               >
                 Reset Encryption State
               </button>
-              <button 
+              <button
                 className="text-sm font-medium px-3 py-1 bg-red-100 hover:bg-red-200 rounded"
                 onClick={handleFullReset}
               >

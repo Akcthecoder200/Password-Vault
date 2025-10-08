@@ -32,27 +32,28 @@ const MAX_CACHE_SIZE = 100; // Maximum number of items in cache
 UserSchema.methods.matchPassword = async function (enteredPassword) {
   // Create a cache key based on the password and hash
   // Using the first few chars of hash + last few chars to avoid storing the full hash in memory
-  const hashPreview = this.passwordHash.slice(0, 10) + this.passwordHash.slice(-10);
+  const hashPreview =
+    this.passwordHash.slice(0, 10) + this.passwordHash.slice(-10);
   const cacheKey = `${enteredPassword.slice(0, 3)}:${hashPreview}:${this._id}`;
-  
+
   // Check cache first
   if (passwordCache.has(cacheKey)) {
     return passwordCache.get(cacheKey);
   }
-  
+
   // Not in cache, perform the comparison
   const isMatch = await bcrypt.compare(enteredPassword, this.passwordHash);
-  
+
   // Store in cache
   passwordCache.set(cacheKey, isMatch);
-  
+
   // Limit cache size
   if (passwordCache.size > MAX_CACHE_SIZE) {
     // Delete oldest entry
     const firstKey = passwordCache.keys().next().value;
     passwordCache.delete(firstKey);
   }
-  
+
   return isMatch;
 };
 

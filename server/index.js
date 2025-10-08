@@ -16,6 +16,7 @@ const corsOptions = {
       ? [
           "https://password-vault-frontend.onrender.com",
           process.env.FRONTEND_URL,
+          // Add any additional frontend URLs here
         ].filter(Boolean)
       : ["http://localhost:3000"],
   credentials: true,

@@ -1,7 +1,7 @@
 services:
   # Backend API Service
   - type: web
-    name: password-vault-api
+    name: password-vault-backend
     env: node
     plan: free
     region: oregon
@@ -31,5 +31,5 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        value: https://password-vault-api.onrender.com
+        value: https://password-vault-backend-o8p4.onrender.com
     autoDeploy: true
